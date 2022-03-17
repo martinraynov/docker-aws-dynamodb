@@ -1,0 +1,36 @@
+version: '3.7'
+
+networks:
+  default:
+    external: true
+    name: lb-common
+  dynamodb:
+
+services:
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    deploy:
+      replicas: 1
+      labels:
+        traefik.enable: "true"
+        traefik.backend: "dynamodb_back"
+        traefik.port: "8000"
+    networks:
+      - dynamodb
+
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin
+    deploy:
+      replicas: 1
+      labels:
+        traefik.frontend.rule: "Host:dynamodb.local.io"
+        traefik.enable: "true"
+        traefik.backend: "dynamodb_gui"
+        traefik.port: "8001"
+    environment:
+      DYNAMO_ENDPOINT: "http://dynamodb-local:8000"
+    depends_on:
+      - dynamodb-local
+    networks:
+      - dynamodb
+      - default
